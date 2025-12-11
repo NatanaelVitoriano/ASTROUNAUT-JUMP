@@ -1,7 +1,7 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const astronautImg = new Image();
-astronautImg.src = "./img/astronauta.png";
+astronautImg.src = "/img/astronauta.png";
 
 const GAME_WIDTH = 500;
 const GAME_HEIGHT = window.innerHeight;
