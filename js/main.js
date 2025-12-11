@@ -504,7 +504,8 @@ function movePlayer() {
   // Game over
   if (player.y > canvas.height) {
     gameState = "gameover";
-  }
+    registrarPontuacaoGlobal();
+ }
 }
 
 function drawStartScreen() {
@@ -524,21 +525,41 @@ function drawStartScreen() {
   ctx.fillText("Pressione 1-9 para testar níveis | 0 = nível 10", canvas.width / 2, canvas.height / 2 + 70);
 }
 
-function drawGameOverScreen() {
+async function drawGameOverScreen() {
   ctx.fillStyle = "white";
   ctx.font = "30px Arial";
   ctx.textAlign = "center";
   ctx.fillText("Fim de jogo!", canvas.width / 2, canvas.height / 2 - 60);
   ctx.font = "20px Arial";
   ctx.fillText("Pontuação: " + player.score, canvas.width / 2, canvas.height / 2 - 20);
-  
+
   const config = getLevelConfig();
   ctx.fillStyle = config.color;
   ctx.fillText("Nível: " + player.level + " - " + config.name, canvas.width / 2, canvas.height / 2 + 20);
-  
+
   ctx.fillStyle = "white";
   ctx.font = "18px Arial";
-  ctx.fillText("Clique ou toque para jogar de novo", canvas.width / 2, canvas.height / 2 + 60);
+  ctx.fillText("Clique para jogar de novo", canvas.width / 2, canvas.height / 2 + 60);
+
+  // =============== RANKING ===============
+  carregarPontuacoes().then(scores => {
+    scores = scores.sort((a, b) => b.score - a.score).slice(0, 10);
+
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "yellow";
+    ctx.fillText("TOP 10", canvas.width / 2, canvas.height / 2 + 120);
+
+    ctx.fillStyle = "white";
+    ctx.font = "14px Arial";
+
+    scores.forEach((s, i) => {
+      ctx.fillText(
+        `${i + 1}. ${s.name} - ${s.score}`,
+        canvas.width / 2,
+        canvas.height / 2 + 150 + i * 20
+      );
+    });
+  });
 }
 
 function drawGame() {
@@ -706,6 +727,64 @@ document.getElementById("rightBtn").addEventListener("touchend", () => keys["Arr
 window.addEventListener("resize", () => {
   canvas.height = window.innerHeight;
 });
+
+/* =======================================================
+   SISTEMA GLOBAL DE PONTUAÇÕES VIA VERCEL API → JSONBIN
+   ======================================================= */
+
+const API_URL = "/api/scores";
+
+// -------- Carregar pontuações --------
+async function carregarPontuacoes() {
+  try {
+    const resp = await fetch(API_URL);
+    const data = await resp.json();
+    return data.scores || [];
+  } catch (err) {
+    console.error("Erro ao carregar ranking:", err);
+    return [];
+  }
+}
+
+// -------- Salvar --------
+async function salvarPontuacoes(scores) {
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scores })
+    });
+  } catch (err) {
+    console.error("Erro ao salvar pontuação:", err);
+  }
+}
+
+// -------- Registrar pontuação ao morrer --------
+async function registrarPontuacaoGlobal() {
+  const nome = prompt("Seu nome:");
+  if (!nome) return;
+
+  let pix = null;
+  if (player.score >= 100000) {
+    pix = prompt("🔥 VOCÊ ATINGIU 100.000 PONTOS! Informe sua chave PIX:");
+  }
+
+  let scores = await carregarPontuacoes();
+
+  scores.push({
+    name: nome,
+    score: player.score,
+    pix,
+    date: new Date().toISOString()
+  });
+
+  // ordena do maior para o menor
+  scores.sort((a, b) => b.score - a.score);
+
+  await salvarPontuacoes(scores);
+
+  alert("Pontuação registrada!");
+}
 
 createInitialPlatforms();
 gameLoop();
