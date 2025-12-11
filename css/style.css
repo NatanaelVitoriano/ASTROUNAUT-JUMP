@@ -1,0 +1,44 @@
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    canvas {
+      display: block;
+      background: linear-gradient(#000011, #001133);
+      max-width: 500px;
+      border: 3px solid #333;
+      box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 20px;
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 30px;
+      box-sizing: border-box;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    #controls button {
+      width: 80px;
+      height: 80px;
+      font-size: 30px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-weight: bold;
+    }
+    #controls button:active {
+      background: rgba(255, 255, 255, 0.5);
+    }
