@@ -1,6 +1,24 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const astronautImg = new Image();
+
+// Variável para controlar carregamento
+let astronautLoaded = false;
+let gameReady = false;
+
+astronautImg.onload = () => {
+  astronautLoaded = true;
+  gameReady = true;
+  console.log("✅ Astronauta carregado!");
+};
+
+astronautImg.onerror = () => {
+  console.error("❌ Erro ao carregar astronauta. Usando fallback.");
+  astronautLoaded = false;
+  gameReady = true; // Continua o jogo mesmo sem imagem
+};
+
+// Carrega com caminho absoluto
 astronautImg.src = "/img/astronauta.png";
 
 const GAME_WIDTH = 500;
@@ -411,7 +429,7 @@ function movePlayer() {
       player.x < plat.x + plat.width &&
       player.x + player.width > plat.x &&
       player.y + player.height > plat.y &&
-      player.y + player.height < plat.y + plat.height &&
+      player.y + player.height < plat.y + player.height &&
       player.dy > 0 &&
       (!isCloudPlatform || canCollideWithCloud)
     ) {
@@ -511,6 +529,13 @@ function drawStartScreen() {
   ctx.fillStyle = "white";
   ctx.font = "30px Arial";
   ctx.textAlign = "center";
+  
+  if (!gameReady) {
+    // Tela de carregamento
+    ctx.fillText("⏳ Carregando...", canvas.width / 2, canvas.height / 2);
+    return;
+  }
+  
   ctx.fillText("🚀 Astronauta Jump 🚀", canvas.width / 2, canvas.height / 2 - 40);
   ctx.font = "20px Arial";
   ctx.fillText("Clique ou toque para começar", canvas.width / 2, canvas.height / 2);
@@ -554,14 +579,42 @@ function drawGame() {
 
   ctx.clearRect(-50, -50, canvas.width + 100, canvas.height + 100);
 
-  // Jogador com imagem
-  ctx.drawImage(
-    astronautImg,
-    player.x - 15,    // Ajuste horizontal
-    player.y - 10,    // Ajuste vertical
-    player.width + 30, // Largura maior pra caber a imagem
-    player.height + 30 // Altura maior pra caber a imagem
-  );
+  // Jogador - com fallback se imagem não carregar
+  if (astronautLoaded && astronautImg.complete) {
+    ctx.drawImage(
+      astronautImg,
+      player.x - 15,
+      player.y - 10,
+      player.width + 30,
+      player.height + 30
+    );
+  } else {
+    // FALLBACK: Desenho simples
+    // Corpo
+    ctx.fillStyle = "white";
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Capacete
+    ctx.beginPath();
+    ctx.arc(player.x + player.width/2, player.y + 15, 18, 0, Math.PI * 2);
+    ctx.fillStyle = "lightgray";
+    ctx.fill();
+    
+    // Visor
+    ctx.beginPath();
+    ctx.arc(player.x + player.width/2, player.y + 15, 12, 0, Math.PI * 2);
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fill();
+    
+    // Braços
+    ctx.fillStyle = "white";
+    ctx.fillRect(player.x - 8, player.y + 25, 8, 15);
+    ctx.fillRect(player.x + player.width, player.y + 25, 8, 15);
+    
+    // Pernas
+    ctx.fillRect(player.x + 10, player.y + player.height, 12, 10);
+    ctx.fillRect(player.x + 28, player.y + player.height, 12, 10);
+  }
 
   // Plataformas
   for (let plat of platforms) {
@@ -656,17 +709,19 @@ let keys = {};
 window.addEventListener("keydown", e => {
   keys[e.key] = true;
   if ((gameState === "start" || gameState === "gameover") && (e.key === "Enter" || e.key === " ")) {
-    createInitialPlatforms();
-    gameState = "playing";
+    if (gameReady) { // Só inicia se tudo carregou
+      createInitialPlatforms();
+      gameState = "playing";
+    }
   }
   
   // ATALHOS PARA TESTAR NÍVEIS (pressione 0-9 na tela inicial)
-  if (gameState === "start" || gameState === "gameover") {
+  if ((gameState === "start" || gameState === "gameover") && gameReady) {
     const levelKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
     const keyIndex = levelKeys.indexOf(e.key);
     
     if (keyIndex >= 0) {
-      const targetLevel = keyIndex === 0 ? 10 : keyIndex; // 0 = nível 10
+      const targetLevel = keyIndex === 0 ? 10 : keyIndex;
       createInitialPlatforms();
       player.score = (targetLevel - 1) * 10000;
       player.level = targetLevel;
@@ -692,7 +747,7 @@ canvas.addEventListener("touchend", function() {
 });
 
 canvas.addEventListener("click", function() {
-  if (gameState === "start" || gameState === "gameover") {
+  if ((gameState === "start" || gameState === "gameover") && gameReady) {
     createInitialPlatforms();
     gameState = "playing";
   }
