@@ -18,16 +18,23 @@ astronautImg.onerror = () => {
   gameReady = true; // Continua o jogo mesmo sem imagem
 };
 
-// Carrega com caminho absoluto
-astronautImg.src = "/img/astronauta.png";
+// Detecta se está em produção (Vercel) ou local
+const isProduction = window.location.hostname !== 'localhost' && 
+                     window.location.hostname !== '127.0.0.1' &&
+                     window.location.protocol !== 'file:';
+
+// Usa caminho apropriado
+astronautImg.src = isProduction ? "/img/astronauta.png" : "./img/astronauta.png";
 
 const GAME_WIDTH = 500;
 const GAME_HEIGHT = window.innerHeight;
 
-canvas.width = GAME_WIDTH;
-canvas.height = GAME_HEIGHT;
-
+// DECLARAR gameState ANTES de usar
 let gameState = "start";
+
+// Inicializa canvas com tamanho padrão
+canvas.width = Math.min(window.innerWidth, 500);
+canvas.height = window.innerHeight;
 
 const player = {
   x: canvas.width / 2 - 25,
@@ -49,6 +56,28 @@ const platformHeight = 15;
 
 let screenShake = 0;
 let items = [];
+
+// Configuração responsiva do canvas
+function resizeCanvas() {
+  const maxWidth = 500;
+  const width = Math.min(window.innerWidth, maxWidth);
+  const height = window.innerHeight;
+  
+  canvas.width = width;
+  canvas.height = height;
+  
+  // Reposiciona o jogador se necessário
+  if (gameState === "start") {
+    player.x = canvas.width / 2 - 25;
+  }
+}
+
+// Desabilita scroll bounce no iOS
+document.addEventListener('touchmove', function(e) {
+  if (e.target === canvas) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 // ========================================
 // SISTEMA DE NÍVEIS - 10 NÍVEIS
@@ -709,7 +738,7 @@ let keys = {};
 window.addEventListener("keydown", e => {
   keys[e.key] = true;
   if ((gameState === "start" || gameState === "gameover") && (e.key === "Enter" || e.key === " ")) {
-    if (gameReady) { // Só inicia se tudo carregou
+    if (gameReady) {
       createInitialPlatforms();
       gameState = "playing";
     }
@@ -731,21 +760,20 @@ window.addEventListener("keydown", e => {
 });
 window.addEventListener("keyup", e => keys[e.key] = false);
 
+// Touch no canvas (iniciar jogo)
 canvas.addEventListener("touchstart", function(e) {
-  const touchX = e.touches[0].clientX;
+  e.preventDefault(); // Previne scroll
+  
   if (gameState === "start" || gameState === "gameover") {
-    createInitialPlatforms();
-    gameState = "playing";
+    if (gameReady) {
+      createInitialPlatforms();
+      gameState = "playing";
+    }
     return;
   }
-  if (touchX < canvas.width / 2) keys["ArrowLeft"] = true;
-  else keys["ArrowRight"] = true;
-});
-canvas.addEventListener("touchend", function() {
-  keys["ArrowLeft"] = false;
-  keys["ArrowRight"] = false;
-});
+}, { passive: false });
 
+// Click no canvas (desktop)
 canvas.addEventListener("click", function() {
   if ((gameState === "start" || gameState === "gameover") && gameReady) {
     createInitialPlatforms();
@@ -753,13 +781,50 @@ canvas.addEventListener("click", function() {
   }
 });
 
-document.getElementById("leftBtn").addEventListener("touchstart", () => keys["ArrowLeft"] = true);
-document.getElementById("leftBtn").addEventListener("touchend", () => keys["ArrowLeft"] = false);
-document.getElementById("rightBtn").addEventListener("touchstart", () => keys["ArrowRight"] = true);
-document.getElementById("rightBtn").addEventListener("touchend", () => keys["ArrowRight"] = false);
+// Botões de controle mobile
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
 
+// Previne comportamento padrão dos botões
+[leftBtn, rightBtn].forEach(btn => {
+  btn.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+  btn.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+  btn.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+});
+
+// Touch events para os botões
+leftBtn.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  keys["ArrowLeft"] = true;
+}, { passive: false });
+
+leftBtn.addEventListener("touchend", (e) => {
+  e.preventDefault();
+  keys["ArrowLeft"] = false;
+}, { passive: false });
+
+rightBtn.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  keys["ArrowRight"] = true;
+}, { passive: false });
+
+rightBtn.addEventListener("touchend", (e) => {
+  e.preventDefault();
+  keys["ArrowRight"] = false;
+}, { passive: false });
+
+// Mouse events para desktop
+leftBtn.addEventListener("mousedown", () => keys["ArrowLeft"] = true);
+leftBtn.addEventListener("mouseup", () => keys["ArrowLeft"] = false);
+leftBtn.addEventListener("mouseleave", () => keys["ArrowLeft"] = false);
+
+rightBtn.addEventListener("mousedown", () => keys["ArrowRight"] = true);
+rightBtn.addEventListener("mouseup", () => keys["ArrowRight"] = false);
+rightBtn.addEventListener("mouseleave", () => keys["ArrowRight"] = false);
+
+// Atualiza canvas ao redimensionar
 window.addEventListener("resize", () => {
-  canvas.height = window.innerHeight;
+  resizeCanvas();
 });
 
 createInitialPlatforms();

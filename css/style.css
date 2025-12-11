@@ -1,44 +1,123 @@
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* Desabilita seleção de texto em toda a página */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Desabilita o zoom ao dar tap duplo */
+  touch-action: manipulation;
+}
 
-    canvas {
-      display: block;
-      background: linear-gradient(#000011, #001133);
-      max-width: 500px;
-      border: 3px solid #333;
-      box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);
-    }
+body {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+}
 
-    #controls {
-      position: fixed;
-      bottom: 20px;
-      width: 100%;
-      max-width: 500px;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 30px;
-      box-sizing: border-box;
-      left: 50%;
-      transform: translateX(-50%);
-    }
+canvas {
+  display: block;
+  background: linear-gradient(#000011, #001133);
+  width: 100%;
+  max-width: 500px;
+  height: 100vh;
+  border: 3px solid #333;
+  box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);
+}
 
-    #controls button {
-      width: 80px;
-      height: 80px;
-      font-size: 30px;
-      border-radius: 50%;
-      border: none;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      font-weight: bold;
-    }
-    #controls button:active {
-      background: rgba(255, 255, 255, 0.5);
-    }
+/* Controles mobile */
+#controls {
+  position: fixed;
+  bottom: 20px;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 30px;
+  box-sizing: border-box;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: none; /* Permite cliques passarem através do container */
+}
+
+#controls button {
+  pointer-events: auto; /* Reativa cliques apenas nos botões */
+  width: 80px;
+  height: 80px;
+  font-size: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  
+  /* Desabilita seleção e arrastar */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  
+  /* Transição suave */
+  transition: all 0.1s ease;
+}
+
+#controls button:active {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(0.95);
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+  canvas {
+    border: none;
+    max-width: 100%;
+  }
+  
+  #controls {
+    padding: 0 20px;
+    bottom: 15px;
+  }
+  
+  #controls button {
+    width: 70px;
+    height: 70px;
+    font-size: 25px;
+  }
+}
+
+@media (max-width: 400px) {
+  #controls {
+    padding: 0 15px;
+    bottom: 10px;
+  }
+  
+  #controls button {
+    width: 60px;
+    height: 60px;
+    font-size: 20px;
+  }
+}
+
+/* Orientação landscape (deitado) em mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  #controls {
+    bottom: 5px;
+  }
+  
+  #controls button {
+    width: 50px;
+    height: 50px;
+    font-size: 18px;
+  }
+}
