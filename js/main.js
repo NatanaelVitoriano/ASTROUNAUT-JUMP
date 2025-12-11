@@ -97,10 +97,11 @@ function getCurrentLevel() {
 
 function getLevelConfig() {
   const level = getCurrentLevel();
+  const bg = levelBackgrounds[level] || levelBackgrounds[1];
   
   const configs = {
     1: {
-      name: "Iniciante 🌱",
+      name: bg.name,
       platforms: ["normal", "moving"],
       chanceMoving: 0.15,
       maxSpacing: 115,
@@ -110,7 +111,7 @@ function getLevelConfig() {
       color: "#00ff00"
     },
     2: {
-      name: "Aprendiz 📚",
+      name: bg.name,
       platforms: ["normal", "moving", "fragile"],
       chanceMoving: 0.2,
       chanceFragile: 0.1,
@@ -121,7 +122,7 @@ function getLevelConfig() {
       color: "#33ff33"
     },
     3: {
-      name: "Aventureiro ⚔️",
+      name: bg.name,
       platforms: ["normal", "moving", "fragile", "boost"],
       chanceMoving: 0.22,
       chanceFragile: 0.15,
@@ -133,7 +134,7 @@ function getLevelConfig() {
       color: "#00ffff"
     },
     4: {
-      name: "Explorador 🗺️",
+      name: bg.name,
       platforms: ["normal", "moving", "fragile", "boost", "spring_side"],
       chanceMoving: 0.25,
       chanceFragile: 0.18,
@@ -146,7 +147,7 @@ function getLevelConfig() {
       color: "#ffff00"
     },
     5: {
-      name: "Desafiador 🔥",
+      name: bg.name,
       platforms: ["normal", "moving", "fragile", "boost", "spring_side", "ghost"],
       chanceMoving: 0.28,
       chanceFragile: 0.2,
@@ -160,7 +161,7 @@ function getLevelConfig() {
       color: "#ff9900"
     },
     6: {
-      name: "Veterano 💪",
+      name: bg.name,
       platforms: ["normal", "moving", "fragile", "boost", "spring_side", "ghost", "cloud"],
       chanceMoving: 0.3,
       chanceFragile: 0.22,
@@ -175,7 +176,7 @@ function getLevelConfig() {
       color: "#ff00ff"
     },
     7: {
-      name: "Mestre 🎯",
+      name: bg.name,
       platforms: ["normal", "moving", "fragile", "boost", "spring_side", "ghost", "cloud", "cracked"],
       chanceMoving: 0.32,
       chanceFragile: 0.24,
@@ -191,7 +192,7 @@ function getLevelConfig() {
       color: "#ff6600"
     },
     8: {
-      name: "Lendário ⭐",
+      name: bg.name,
       platforms: ["moving", "fragile", "boost", "spring_side", "ghost", "cloud", "cracked"],
       chanceMoving: 0.33,
       chanceFragile: 0.26,
@@ -207,7 +208,7 @@ function getLevelConfig() {
       color: "#9933ff"
     },
     9: {
-      name: "Épico 💎",
+      name: bg.name,
       platforms: ["moving", "fragile", "boost", "spring_side", "ghost", "cloud", "cracked"],
       chanceMoving: 0.35,
       chanceFragile: 0.28,
@@ -223,7 +224,7 @@ function getLevelConfig() {
       color: "#ff0099"
     },
     10: {
-      name: "IMPOSSÍVEL 💀",
+      name: bg.name,
       platforms: ["moving", "fragile", "spring_side", "ghost", "cloud", "cracked"],
       chanceMoving: 0.38,
       chanceFragile: 0.3,
@@ -255,6 +256,9 @@ function createInitialPlatforms() {
   player.score = 0;
   player.jetpack = false;
   player.level = 1;
+  
+  // Cria estrelas para o nível inicial
+  createStars();
 
   platforms.push({
     x: player.x - 15,
@@ -435,6 +439,7 @@ function updatePlatforms() {
 
 function movePlayer() {
   const config = getLevelConfig();
+  const oldLevel = player.level;
   
   if (keys["ArrowLeft"]) player.x -= config.playerSpeed;
   if (keys["ArrowRight"]) player.x += config.playerSpeed;
@@ -547,6 +552,11 @@ function movePlayer() {
 
   // Atualiza nível
   player.level = getCurrentLevel();
+  
+  // Recria estrelas quando muda de nível
+  if (oldLevel !== player.level) {
+    createStars();
+  }
 
   // Game over
   if (player.y > canvas.height) {
@@ -595,6 +605,144 @@ function drawGameOverScreen() {
   ctx.fillText("Clique ou toque para jogar de novo", canvas.width / 2, canvas.height / 2 + 60);
 }
 
+// ========================================
+// SISTEMA DE BACKGROUNDS TEMÁTICOS
+// ========================================
+const levelBackgrounds = {
+  1: {
+    name: "Terra 🌎",
+    colors: ["#001d3d", "#003566"],
+    stars: { count: 30, brightness: 0.3 }
+  },
+  2: {
+    name: "Atmosfera Alta ☁️",
+    colors: ["#240046", "#5a189a"],
+    stars: { count: 50, brightness: 0.5 }
+  },
+  3: {
+    name: "Órbita da Terra 🛰️",
+    colors: ["#03071e", "#370617"],
+    stars: { count: 80, brightness: 0.7 }
+  },
+  4: {
+    name: "Lua 🌕",
+    colors: ["#4a4e69", "#22223b"],
+    stars: { count: 100, brightness: 0.8 }
+  },
+  5: {
+    name: "Marte 🔴",
+    colors: ["#66101f", "#b11d1d"],
+    stars: { count: 120, brightness: 0.6 }
+  },
+  6: {
+    name: "Cinturão de Asteroides 🪨",
+    colors: ["#2d2a32", "#1b1b1e"],
+    stars: { count: 150, brightness: 0.9 }
+  },
+  7: {
+    name: "Júpiter 🌪️",
+    colors: ["#ff8c42", "#d00000"],
+    stars: { count: 100, brightness: 0.7 }
+  },
+  8: {
+    name: "Anéis de Saturno 💍",
+    colors: ["#ffd60a", "#faa307"],
+    stars: { count: 80, brightness: 0.6 }
+  },
+  9: {
+    name: "Espaço Profundo 🌌",
+    colors: ["#2a0a4a", "#4c1b7b"],
+    stars: { count: 200, brightness: 1.0 }
+  },
+  10: {
+    name: "Horizonte de Eventos 💀🌀",
+    colors: ["#000000", "#0a0a0a"],
+    stars: { count: 250, brightness: 1.0 },
+    blackHole: true
+  }
+};
+
+// Sistema de estrelas
+let stars = [];
+
+function createStars() {
+  const bg = levelBackgrounds[player.level] || levelBackgrounds[1];
+  stars = [];
+  
+  for (let i = 0; i < bg.stars.count; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2,
+      brightness: Math.random() * bg.stars.brightness,
+      twinkle: Math.random() * 100
+    });
+  }
+}
+
+function updateStars() {
+  for (let star of stars) {
+    star.twinkle += 0.05;
+    star.brightness = Math.abs(Math.sin(star.twinkle)) * levelBackgrounds[player.level].stars.brightness;
+  }
+}
+
+function drawBackground() {
+  const bg = levelBackgrounds[player.level] || levelBackgrounds[1];
+  
+  // Gradiente do fundo
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, bg.colors[0]);
+  gradient.addColorStop(1, bg.colors[1]);
+  
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Estrelas
+  for (let star of stars) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+    ctx.beginPath();
+    ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Efeito especial do Buraco Negro (nível 10)
+  if (bg.blackHole) {
+    drawBlackHoleEffect();
+  }
+}
+
+function drawBlackHoleEffect() {
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 4;
+  const time = Date.now() * 0.001;
+  
+  // Espiral do buraco negro
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  
+  for (let i = 0; i < 3; i++) {
+    const radius = 150 + i * 50;
+    const rotation = time + i * 0.5;
+    
+    ctx.strokeStyle = `rgba(138, 43, 226, ${0.3 - i * 0.1})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    
+    for (let angle = 0; angle < Math.PI * 2; angle += 0.1) {
+      const x = centerX + Math.cos(angle + rotation) * radius;
+      const y = centerY + Math.sin(angle + rotation) * radius * 0.3;
+      
+      if (angle === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+}
+
 function drawGame() {
   // Aplicar screen shake
   if (screenShake > 0) {
@@ -606,7 +754,9 @@ function drawGame() {
     screenShake *= 0.9;
   }
 
-  ctx.clearRect(-50, -50, canvas.width + 100, canvas.height + 100);
+  // NOVO: Desenhar background temático
+  drawBackground();
+  updateStars();
 
   // Jogador - com fallback se imagem não carregar
   if (astronautLoaded && astronautImg.complete) {
