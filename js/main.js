@@ -29,6 +29,36 @@ astronautImg.src = isProduction ? "/img/astronauta.png" : "./img/astronauta.png"
 const GAME_WIDTH = 500;
 const GAME_HEIGHT = window.innerHeight;
 
+// NOVO: Sistema de escala responsiva
+let scale = 1;
+let responsiveConfig = {
+  platformWidth: 80,
+  platformHeight: 15,
+  playerWidth: 50,
+  playerHeight: 50,
+  removalMargin: 100,
+  drawMargin: 50
+};
+
+function calculateResponsiveValues() {
+  // Escala baseada na largura do canvas
+  scale = Math.min(canvas.width / 500, 1);
+  
+  // Ajusta valores proporcionalmente
+  responsiveConfig.platformWidth = Math.floor(80 * scale);
+  responsiveConfig.platformHeight = Math.floor(15 * scale);
+  responsiveConfig.playerWidth = Math.floor(50 * scale);
+  responsiveConfig.playerHeight = Math.floor(50 * scale);
+  
+  // Margens proporcionais à altura da tela
+  responsiveConfig.removalMargin = Math.max(canvas.height * 0.2, 100);
+  responsiveConfig.drawMargin = Math.max(canvas.height * 0.1, 50);
+  
+  // Garante valores mínimos
+  responsiveConfig.platformWidth = Math.max(responsiveConfig.platformWidth, 60);
+  responsiveConfig.platformHeight = Math.max(responsiveConfig.platformHeight, 12);
+}
+
 // DECLARAR gameState ANTES de usar
 let gameState = "start";
 
@@ -266,10 +296,17 @@ function resizeCanvas() {
   canvas.width = width;
   canvas.height = height;
   
+  // Recalcula valores responsivos
+  calculateResponsiveValues();
+  
   // Reposiciona o jogador se necessário
   if (gameState === "start") {
-    player.x = canvas.width / 2 - 25;
+    player.x = canvas.width / 2 - responsiveConfig.playerWidth / 2;
   }
+  
+  // Atualiza tamanho do jogador
+  player.width = responsiveConfig.playerWidth;
+  player.height = responsiveConfig.playerHeight;
 }
 
 // Desabilita scroll bounce no iOS
@@ -299,27 +336,30 @@ function getLevelConfig() {
   const level = getCurrentLevel();
   const bg = levelBackgrounds[level] || levelBackgrounds[1];
   
+  // Espaçamento vertical ajustado para a tela
+  const baseSpacing = canvas.height < 700 ? 100 : 115;
+  
   const configs = {
     1: {
       name: bg.name,
       platforms: ["normal", "moving"],
       chanceMoving: 0.15,
-      maxSpacing: 115,
-      playerSpeed: 6,
+      maxSpacing: baseSpacing,
+      playerSpeed: 6 * scale,
       platformSpeed: 1.5,
       gravity: 0.33,
-      color: "#7CFC00" // Softer green
+      color: "#7CFC00"
     },
     2: {
       name: bg.name,
       platforms: ["normal", "moving", "fragile"],
       chanceMoving: 0.2,
       chanceFragile: 0.1,
-      maxSpacing: 120,
-      playerSpeed: 6.2,
+      maxSpacing: baseSpacing + 5,
+      playerSpeed: 6.2 * scale,
       platformSpeed: 1.6,
       gravity: 0.34,
-      color: "#90EE90" // Light green
+      color: "#90EE90"
     },
     3: {
       name: bg.name,
@@ -327,11 +367,11 @@ function getLevelConfig() {
       chanceMoving: 0.22,
       chanceFragile: 0.15,
       chanceBoost: 0.08,
-      maxSpacing: 125,
-      playerSpeed: 6.5,
+      maxSpacing: baseSpacing + 10,
+      playerSpeed: 6.5 * scale,
       platformSpeed: 1.7,
       gravity: 0.35,
-      color: "#87CEEB" // Sky blue
+      color: "#87CEEB"
     },
     4: {
       name: bg.name,
@@ -340,11 +380,11 @@ function getLevelConfig() {
       chanceFragile: 0.18,
       chanceBoost: 0.08,
       chanceSpringSide: 0.1,
-      maxSpacing: 130,
-      playerSpeed: 6.8,
+      maxSpacing: baseSpacing + 15,
+      playerSpeed: 6.8 * scale,
       platformSpeed: 1.8,
       gravity: 0.36,
-      color: "#FFDAB9" // Peach puff
+      color: "#FFDAB9"
     },
     5: {
       name: bg.name,
@@ -354,11 +394,11 @@ function getLevelConfig() {
       chanceBoost: 0.08,
       chanceSpringSide: 0.1,
       chanceGhost: 0.12,
-      maxSpacing: 135,
-      playerSpeed: 7.1,
+      maxSpacing: baseSpacing + 20,
+      playerSpeed: 7.1 * scale,
       platformSpeed: 1.9,
       gravity: 0.37,
-      color: "#FFA07A" // Light salmon
+      color: "#FFA07A"
     },
     6: {
       name: bg.name,
@@ -369,11 +409,11 @@ function getLevelConfig() {
       chanceSpringSide: 0.1,
       chanceGhost: 0.13,
       chanceCloud: 0.12,
-      maxSpacing: 140,
-      playerSpeed: 7.5,
+      maxSpacing: baseSpacing + 25,
+      playerSpeed: 7.5 * scale,
       platformSpeed: 2.0,
       gravity: 0.38,
-      color: "#DDA0DD" // Plum
+      color: "#DDA0DD"
     },
     7: {
       name: bg.name,
@@ -385,11 +425,11 @@ function getLevelConfig() {
       chanceGhost: 0.14,
       chanceCloud: 0.12,
       chanceCracked: 0.1,
-      maxSpacing: 145,
-      playerSpeed: 7.8,
+      maxSpacing: baseSpacing + 30,
+      playerSpeed: 7.8 * scale,
       platformSpeed: 2.1,
       gravity: 0.39,
-      color: "#F0E68C" // Khaki
+      color: "#F0E68C"
     },
     8: {
       name: bg.name,
@@ -401,11 +441,11 @@ function getLevelConfig() {
       chanceGhost: 0.15,
       chanceCloud: 0.13,
       chanceCracked: 0.12,
-      maxSpacing: 155,
-      playerSpeed: 8.5,
+      maxSpacing: baseSpacing + 40,
+      playerSpeed: 8.5 * scale,
       platformSpeed: 2.2,
       gravity: 0.45,
-      color: "#D8BFD8" // Thistle
+      color: "#D8BFD8"
     },
     9: {
       name: bg.name,
@@ -417,11 +457,11 @@ function getLevelConfig() {
       chanceGhost: 0.17,
       chanceCloud: 0.14,
       chanceCracked: 0.14,
-      maxSpacing: 160,
-      playerSpeed: 9.0,
+      maxSpacing: baseSpacing + 45,
+      playerSpeed: 9.0 * scale,
       platformSpeed: 2.4,
       gravity: 0.54,
-      color: "#FFB6C1" // Light pink
+      color: "#FFB6C1"
     },
     10: {
       name: bg.name,
@@ -433,11 +473,11 @@ function getLevelConfig() {
       chanceGhost: 0.2,
       chanceCloud: 0.15,
       chanceCracked: 0.15,
-      maxSpacing: 165,
-      playerSpeed: 10.0,
+      maxSpacing: baseSpacing + 50,
+      playerSpeed: 10.0 * scale,
       platformSpeed: 2.6,
       gravity: 0.55,
-      color: "#FF6B6B" // Soft red
+      color: "#FF6B6B"
     }
   };
   
@@ -450,14 +490,19 @@ function getLevelConfig() {
 function createInitialPlatforms() {
   platforms = [];
   items = [];
-  player.x = canvas.width / 2 - 25;
+  
+  // Recalcula valores responsivos
+  calculateResponsiveValues();
+  
+  player.x = canvas.width / 2 - responsiveConfig.playerWidth / 2;
   player.y = canvas.height - 150;
+  player.width = responsiveConfig.playerWidth;
+  player.height = responsiveConfig.playerHeight;
   player.dy = 0;
   player.score = 0;
   player.jetpack = false;
   player.level = 1;
   
-  // Reseta animação da intro quando reinicia o jogo
   introTextAlpha = 0;
   introWordIndex = 0;
   introWordTimer = 0;
@@ -469,14 +514,14 @@ function createInitialPlatforms() {
   platforms.push({
     x: player.x - 15,
     y: player.y + player.height,
-    width: platformWidth,
-    height: platformHeight,
+    width: responsiveConfig.platformWidth,
+    height: responsiveConfig.platformHeight,
     type: "normal",
     dx: 0,
     disappear: false
   });
 
-  for (let i = 1; i < 6; i++) {
+  for (let i = 1; i < 8; i++) {
     addPlatform();
   }
 }
@@ -492,10 +537,10 @@ function startAtLevel(targetLevel) {
 function addPlatform() {
   if (platforms.length === 0) {
     platforms.push({
-      x: canvas.width / 2 - platformWidth / 2,
+      x: canvas.width / 2 - responsiveConfig.platformWidth / 2,
       y: canvas.height / 2,
-      width: platformWidth,
-      height: platformHeight,
+      width: responsiveConfig.platformWidth,
+      height: responsiveConfig.platformHeight,
       type: "normal",
       dx: 0,
       disappear: false
@@ -507,12 +552,12 @@ function addPlatform() {
   const config = getLevelConfig();
   
   const verticalGap = config.maxSpacing;
-  const horizontalRange = 60 + Math.random() * 200;
+  // Ajusta alcance horizontal baseado na largura da tela
+  const horizontalRange = (canvas.width * 0.15) + Math.random() * (canvas.width * 0.4);
   const direction = Math.random() > 0.5 ? 1 : -1;
   const targetX = lastPlatform.x + (direction * horizontalRange);
-  const finalX = Math.max(10, Math.min(canvas.width - platformWidth - 10, targetX));
+  const finalX = Math.max(10, Math.min(canvas.width - responsiveConfig.platformWidth - 10, targetX));
 
-  // Determinar tipo de plataforma baseado no nível
   let type = "normal";
   let dx = 0;
   let disappear = false;
@@ -523,40 +568,32 @@ function addPlatform() {
   const rand = Math.random();
   let cumulative = 0;
 
-  // Fragile
   if (config.chanceFragile && rand < (cumulative += config.chanceFragile)) {
     type = "fragile";
     disappear = true;
   }
-  // Moving
   else if (config.chanceMoving && rand < (cumulative += config.chanceMoving)) {
     type = "moving";
     dx = (Math.random() < 0.5 ? 1 : -1) * config.platformSpeed;
   }
-  // Boost (Super Jump)
   else if (config.chanceBoost && rand < (cumulative += config.chanceBoost)) {
     type = "boost";
   }
-  // Spring Side (Mola Lateral) - NOVO
   else if (config.chanceSpringSide && rand < (cumulative += config.chanceSpringSide)) {
     type = "spring_side";
     springDirection = Math.random() < 0.5 ? "left" : "right";
   }
-  // Ghost (Fantasma) - NOVO
   else if (config.chanceGhost && rand < (cumulative += config.chanceGhost)) {
     type = "ghost";
     ghostVisible = true;
     ghostTimer = 0;
   }
-  // Cloud (Nuvem) - NOVO
   else if (config.chanceCloud && rand < (cumulative += config.chanceCloud)) {
     type = "cloud";
   }
-  // Cracked (Rachada)
   else if (config.chanceCracked && rand < (cumulative += config.chanceCracked)) {
     type = "cracked";
   }
-  // Normal
   else {
     type = "normal";
   }
@@ -564,8 +601,8 @@ function addPlatform() {
   const plat = {
     x: finalX,
     y: lastPlatform.y - verticalGap,
-    width: platformWidth,
-    height: platformHeight,
+    width: responsiveConfig.platformWidth,
+    height: responsiveConfig.platformHeight,
     type,
     dx,
     disappear,
@@ -617,16 +654,18 @@ function updatePlatforms() {
       }
     }
 
-    // Remove plataformas fora da tela
-    if (plat.y > canvas.height + 100) {
+    // Remove plataformas bem abaixo da tela
+    if (plat.y > canvas.height + responsiveConfig.removalMargin) {
       platforms.splice(i, 1);
     }
   }
 
-  // Adiciona novas plataformas
+  // Adiciona novas plataformas mantendo sempre uma boa quantidade visível
   if (platforms.length > 0) {
     const highestPlatform = Math.min(...platforms.map(p => p.y));
-    while (highestPlatform > -300 && platforms.length < 8) {
+    const minPlatforms = Math.ceil(canvas.height / 100); // Mais plataformas em telas maiores
+    
+    while (highestPlatform > -canvas.height * 0.5 && platforms.length < minPlatforms) {
       addPlatform();
     }
   } else {
@@ -637,7 +676,7 @@ function updatePlatforms() {
 
   // Atualiza itens
   for (let i = items.length - 1; i >= 0; i--) {
-    if (items[i].y > canvas.height) {
+    if (items[i].y > canvas.height + responsiveConfig.removalMargin) {
       items.splice(i, 1);
     }
   }
@@ -1051,7 +1090,6 @@ function drawAnimatedIntroText() {
 }
 
 function drawGame() {
-  // Aplicar screen shake
   if (screenShake > 0) {
     ctx.save();
     ctx.translate(
@@ -1061,114 +1099,115 @@ function drawGame() {
     screenShake *= 0.9;
   }
 
-  // NOVO: Desenhar background temático
   drawBackground();
   updateStars();
 
-  // Jogador - com fallback se imagem não carregar
+  // Jogador - tamanho responsivo
+  const playerDrawWidth = player.width + 30 * scale;
+  const playerDrawHeight = player.height + 30 * scale;
+  const playerOffsetX = 15 * scale;
+  const playerOffsetY = 10 * scale;
+
   if (astronautLoaded && astronautImg.complete) {
     ctx.drawImage(
       astronautImg,
-      player.x - 15,
-      player.y - 10,
-      player.width + 30,
-      player.height + 30
+      player.x - playerOffsetX,
+      player.y - playerOffsetY,
+      playerDrawWidth,
+      playerDrawHeight
     );
   } else {
-    // FALLBACK: Desenho simples
-    // Corpo
+    // Fallback escalado
     ctx.fillStyle = "white";
     ctx.fillRect(player.x, player.y, player.width, player.height);
     
-    // Capacete
+    const headRadius = 18 * scale;
     ctx.beginPath();
-    ctx.arc(player.x + player.width/2, player.y + 15, 18, 0, Math.PI * 2);
+    ctx.arc(player.x + player.width/2, player.y + 15 * scale, headRadius, 0, Math.PI * 2);
     ctx.fillStyle = "lightgray";
     ctx.fill();
     
-    // Visor
     ctx.beginPath();
-    ctx.arc(player.x + player.width/2, player.y + 15, 12, 0, Math.PI * 2);
+    ctx.arc(player.x + player.width/2, player.y + 15 * scale, 12 * scale, 0, Math.PI * 2);
     ctx.fillStyle = "#1a1a1a";
     ctx.fill();
     
-    // Braços
     ctx.fillStyle = "white";
-    ctx.fillRect(player.x - 8, player.y + 25, 8, 15);
-    ctx.fillRect(player.x + player.width, player.y + 25, 8, 15);
-    
-    // Pernas
-    ctx.fillRect(player.x + 10, player.y + player.height, 12, 10);
-    ctx.fillRect(player.x + 28, player.y + player.height, 12, 10);
+    ctx.fillRect(player.x - 8 * scale, player.y + 25 * scale, 8 * scale, 15 * scale);
+    ctx.fillRect(player.x + player.width, player.y + 25 * scale, 8 * scale, 15 * scale);
+    ctx.fillRect(player.x + 10 * scale, player.y + player.height, 12 * scale, 10 * scale);
+    ctx.fillRect(player.x + 28 * scale, player.y + player.height, 12 * scale, 10 * scale);
   }
 
-  // Plataformas com aparência profissional
+  // Plataformas - só desenha as visíveis
   for (let plat of platforms) {
-    // Plataforma fantasma pisca
+    if (plat.y < -responsiveConfig.drawMargin || plat.y > canvas.height + responsiveConfig.drawMargin) {
+      continue;
+    }
+
     if (plat.type === "ghost" && !plat.ghostVisible) {
       ctx.globalAlpha = 0.3;
     }
 
-    // Criar gradiente para profundidade
     let gradient = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.height);
     let baseColor, accentColor;
 
     if (plat.type === "fragile") {
-      baseColor = "#FF6B6B"; // Soft red
+      baseColor = "#FF6B6B";
       accentColor = "#CC5555";
     } else if (plat.type === "moving") {
-      baseColor = "#FFDAB9"; // Peach puff
+      baseColor = "#FFDAB9";
       accentColor = "#E6C3A3";
     } else if (plat.type === "boost") {
-      baseColor = "#87CEEB"; // Sky blue
+      baseColor = "#87CEEB";
       accentColor = "#6BB6D6";
     } else if (plat.type === "cracked") {
-      baseColor = "#D2B48C"; // Tan
+      baseColor = "#D2B48C";
       accentColor = "#B8A076";
     } else if (plat.type === "spring_side") {
-      baseColor = "#FFB6C1"; // Light pink
+      baseColor = "#FFB6C1";
       accentColor = "#E69FB0";
     } else if (plat.type === "ghost") {
-      baseColor = "#DDA0DD"; // Plum
+      baseColor = "#DDA0DD";
       accentColor = "#C78BC7";
     } else if (plat.type === "cloud") {
-      baseColor = "#E6E6FA"; // Lavender
+      baseColor = "#E6E6FA";
       accentColor = "#D1D1E0";
     } else {
-      baseColor = "#90EE90"; // Light green
+      baseColor = "#90EE90";
       accentColor = "#7BCF7B";
     }
 
     gradient.addColorStop(0, baseColor);
     gradient.addColorStop(1, accentColor);
 
-    // Desenhar plataforma com gradiente e bordas arredondadas
     ctx.save();
     ctx.fillStyle = gradient;
     ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
-    ctx.shadowBlur = 5;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
+    ctx.shadowBlur = 5 * scale;
+    ctx.shadowOffsetX = 2 * scale;
+    ctx.shadowOffsetY = 2 * scale;
     ctx.beginPath();
-    const radius = 5; // Bordas arredondadas
+    const radius = 5 * scale;
     ctx.roundRect(plat.x, plat.y, plat.width, plat.height, radius);
     ctx.fill();
 
-    // Contorno sutil
     ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.restore();
 
-    // Ícones ou efeitos especiais para diferenciação
+    // Ícones escalados
+    const fontSize = Math.floor(16 * scale);
+    ctx.font = `${fontSize}px Arial`;
+    ctx.textAlign = "center";
+    
     if (plat.type === "boost") {
       ctx.fillStyle = "white";
-      ctx.font = "16px Arial";
-      ctx.textAlign = "center";
       ctx.fillText("↑", plat.x + plat.width / 2, plat.y + plat.height / 2 + 5);
     } else if (plat.type === "fragile") {
       ctx.fillStyle = "white";
-      ctx.font = "12px Arial";
+      ctx.font = `${Math.floor(12 * scale)}px Arial`;
       ctx.fillText("!", plat.x + plat.width / 2, plat.y + plat.height / 2 + 4);
     } else if (plat.type === "cracked") {
       ctx.strokeStyle = "black";
@@ -1180,17 +1219,13 @@ function drawGame() {
     } else if (plat.type === "cloud") {
       ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
       ctx.beginPath();
-      ctx.arc(plat.x + 20, plat.y + 8, 8, 0, Math.PI * 2);
-      ctx.arc(plat.x + 35, plat.y + 8, 10, 0, Math.PI * 2);
-      ctx.arc(plat.x + 50, plat.y + 8, 8, 0, Math.PI * 2);
+      ctx.arc(plat.x + plat.width * 0.25, plat.y + plat.height * 0.5, 8 * scale, 0, Math.PI * 2);
+      ctx.arc(plat.x + plat.width * 0.5, plat.y + plat.height * 0.5, 10 * scale, 0, Math.PI * 2);
+      ctx.arc(plat.x + plat.width * 0.75, plat.y + plat.height * 0.5, 8 * scale, 0, Math.PI * 2);
       ctx.fill();
-    }
-
-    // Indicador de direção para mola lateral (mantido)
-    if (plat.type === "spring_side") {
+    } else if (plat.type === "spring_side") {
       ctx.fillStyle = "white";
-      ctx.font = "20px Arial";
-      ctx.textAlign = "center";
+      ctx.font = `${Math.floor(20 * scale)}px Arial`;
       ctx.fillText(plat.springDirection === "left" ? "◄" : "►", plat.x + plat.width / 2, plat.y + 12);
     }
 
@@ -1199,10 +1234,14 @@ function drawGame() {
 
   // Itens
   for (let item of items) {
+    if (item.y < -responsiveConfig.drawMargin || item.y > canvas.height + responsiveConfig.drawMargin) {
+      continue;
+    }
+    
     if (item.type === "star") {
       ctx.fillStyle = "yellow";
       ctx.beginPath();
-      ctx.arc(item.x + item.width / 2, item.y + item.height / 2, 10, 0, Math.PI * 2);
+      ctx.arc(item.x + item.width / 2, item.y + item.height / 2, 10 * scale, 0, Math.PI * 2);
       ctx.fill();
     } else if (item.type === "jetpack") {
       ctx.fillStyle = "cyan";
@@ -1210,28 +1249,27 @@ function drawGame() {
     }
   }
 
-  // HUD
+  // HUD responsivo
+  const hudFontSize = Math.floor(20 * Math.min(scale, 1));
   ctx.fillStyle = "white";
-  ctx.font = "20px Arial";
+  ctx.font = `${hudFontSize}px Arial`;
   ctx.textAlign = "left";
   ctx.fillText("Pontuação: " + player.score, 10, 30);
   
-  // Nível com cor
   const config = getLevelConfig();
   ctx.fillStyle = config.color;
-  ctx.font = "18px Arial";
+  ctx.font = `${Math.floor(18 * Math.min(scale, 1))}px Arial`;
   ctx.fillText("Nível " + player.level + ": " + config.name, 10, 55);
   
-  // Próximo nível
   if (player.level < 10) {
     const nextLevel = (player.level * 10000);
     const remaining = nextLevel - player.score;
     ctx.fillStyle = "#888";
-    ctx.font = "14px Arial";
+    ctx.font = `${Math.floor(14 * Math.min(scale, 1))}px Arial`;
     ctx.fillText("Próximo: " + remaining + " pts", 10, 75);
   } else {
     ctx.fillStyle = "#ff0000";
-    ctx.font = "14px Arial";
+    ctx.font = `${Math.floor(14 * Math.min(scale, 1))}px Arial`;
     ctx.fillText("NÍVEL MÁXIMO! 💀", 10, 75);
   }
 
