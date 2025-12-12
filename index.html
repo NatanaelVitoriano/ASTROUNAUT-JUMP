@@ -17,6 +17,35 @@
     <button id="rightBtn" aria-label="Mover para direita">➡️</button>
   </div>
 
+  <!-- Modal Nome -->
+  <div id="modalNome" class="modal">
+    <div class="modal-content">
+      <h2>🚀 Bem-vindo, Astronauta!</h2>
+      <p>Digite seu nome para começar:</p>
+      <input type="text" id="inputNome" placeholder="Seu nome" maxlength="20">
+      <div class="modal-buttons">
+        <button onclick="confirmarNome()" class="btn-primary">Iniciar Missão</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal PIX -->
+  <div id="modalPix" class="modal">
+    <div class="modal-content">
+      <h2>🔥 PARABÉNS! 100.000 PONTOS!</h2>
+      <p>Você venceu o desafio!</p>
+      <p>Informe sua chave PIX (opcional) para receber o prêmio:</p>
+      <input type="text" id="inputPix" placeholder="Chave PIX (email, telefone, CPF...)">
+      <div class="modal-buttons">
+        <button onclick="confirmarPix()" class="btn-primary">Confirmar</button>
+        <button onclick="fecharModalPix()" class="btn-secondary">Pular</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Notificação -->
+  <div id="notificacao" class="notificacao"></div>
+
   <script src="js/main.js"></script>
 </body>
 </html>

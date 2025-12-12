@@ -50,12 +50,212 @@ const player = {
   level: 1
 };
 
+let playerName = null;
+
+/* =======================================================
+   SISTEMA GLOBAL DE PONTUAÇÕES VIA JSONBIN.IO
+   ======================================================= */
+
+const JSONBIN_ID = "693ae9d6d0ea881f40224250";
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_ID}`;
+const JSONBIN_KEY = "$2a$10$EW0tMrOEJWnc5qUwAzOQie7fkFGUTQ.DSxIsXtfNNa4i/bhKj4LJK";
+
+// -------- Carregar pontuações do JSONBin --------
+async function carregarPontuacoes() {
+  try {
+    const resp = await fetch(`${JSONBIN_URL}/latest`, {
+      headers: {
+        "X-Master-Key": JSONBIN_KEY
+      }
+    });
+
+    const data = await resp.json();
+    return data.record.scores || [];
+  } catch (err) {
+    console.error("Erro ao carregar ranking:", err);
+    return [];
+  }
+}
+
+// -------- Salvar pontuações no JSONBin --------
+async function salvarPontuacoes(scores) {
+  try {
+    const resp = await fetch(JSONBIN_URL, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": JSONBIN_KEY
+      },
+      body: JSON.stringify({ scores })
+    });
+
+    if (!resp.ok) {
+      console.error("Erro ao salvar:", await resp.text());
+    }
+  } catch (err) {
+    console.error("Erro ao salvar pontuação:", err);
+  }
+}
+
+// -------- Registrar pontuação ao morrer --------
+async function registrarPontuacaoGlobal() {
+  if (!playerName) return;
+
+  // Verifica se atingiu 100k pontos
+  if (player.score >= 100000) {
+    mostrarModalPix();
+  } else {
+    await salvarPontuacao(null);
+  }
+}
+
+async function salvarPontuacao(pix) {
+  // Tenta carregar pontuações existentes
+  let scores = [];
+  try {
+    const resp = await fetch(`${JSONBIN_URL}/latest`, {
+      headers: {
+        "X-Master-Key": JSONBIN_KEY
+      }
+    });
+
+    if (resp.ok) {
+      const data = await resp.json();
+      scores = data.record.scores || [];
+    }
+  } catch (err) {
+    console.warn("Não foi possível carregar pontuações anteriores:", err);
+    scores = [];
+  }
+
+  // Adiciona a nova pontuação ao array existente
+  scores.push({
+    name: playerName,
+    score: player.score,
+    pix: pix,
+    date: new Date().toISOString()
+  });
+
+  await salvarPontuacoes(scores);
+
+  mostrarNotificacao("🎉 Pontuação registrada com sucesso!");
+}
+
+// -------- Sistema de Modais Customizados --------
+function mostrarModalNome() {
+  const modal = document.getElementById("modalNome");
+  const input = document.getElementById("inputNome");
+  modal.style.display = "flex";
+  setTimeout(() => input.focus(), 100);
+}
+
+function fecharModalNome() {
+  document.getElementById("modalNome").style.display = "none";
+}
+
+function confirmarNome() {
+  const input = document.getElementById("inputNome");
+  const nome = input.value.trim();
+  
+  if (nome) {
+    playerName = nome;
+    fecharModalNome();
+    createInitialPlatforms();
+    gameState = "playing";
+  } else {
+    input.style.borderColor = "#ff4444";
+    setTimeout(() => input.style.borderColor = "#4a9eff", 500);
+  }
+}
+
+function mostrarModalPix() {
+  const modal = document.getElementById("modalPix");
+  const input = document.getElementById("inputPix");
+  modal.style.display = "flex";
+  setTimeout(() => input.focus(), 100);
+}
+
+function fecharModalPix() {
+  document.getElementById("modalPix").style.display = "none";
+  salvarPontuacao(null);
+}
+
+function confirmarPix() {
+  const input = document.getElementById("inputPix");
+  const pix = input.value.trim();
+  
+  document.getElementById("modalPix").style.display = "none";
+  salvarPontuacao(pix || null);
+}
+
+function mostrarNotificacao(mensagem) {
+  const notif = document.getElementById("notificacao");
+  notif.textContent = mensagem;
+  notif.style.display = "block";
+  notif.style.opacity = "1";
+  
+  setTimeout(() => {
+    notif.style.opacity = "0";
+    setTimeout(() => notif.style.display = "none", 300);
+  }, 3000);
+}
+
+
+// -------- Verificar quem foi o primeiro a bater 100k --------
+async function checarPrimeiroVencedor() {
+  let scores = await carregarPontuacoes();
+
+  const vencedor = scores
+    .filter(s => s.score >= 100000)
+    .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
+
+  if (!vencedor) {
+    alert("Ainda não existe um vencedor que atingiu 100.000 pontos!");
+    return;
+  }
+
+  alert(
+    `🏆 PRIMEIRO VENCEDOR DO DESAFIO!\n\n` +
+    `Nome: ${vencedor.name}\n` +
+    `Pontuação: ${vencedor.score}\n` +
+    `PIX: ${vencedor.pix}\n` +
+    `Data: ${new Date(vencedor.date).toLocaleString()}\n`
+  );
+}
+
 let platforms = [];
 const platformWidth = 80;
 const platformHeight = 15;
 
 let screenShake = 0;
 let items = [];
+
+// Estrelas animadas para intro
+let introStars = [];
+for (let i = 0; i < 60; i++) {
+  introStars.push({
+    x: Math.random() * GAME_WIDTH,
+    y: Math.random() * GAME_HEIGHT,
+    size: Math.random() * 2 + 1,
+    opacity: Math.random(),
+    speed: Math.random() * 0.02 + 0.01
+  });
+}
+
+// Planetas passando
+let introPlanets = [
+  { x: -80, y: 120, size: 90, speed: 0.2 },
+  { x: GAME_WIDTH + 100, y: 350, size: 120, speed: -0.15 },
+];
+
+// Astronauta flutuante
+let introAstronautFloat = 0;
+let introAstronautDirection = 1;
+
+let introTextAlpha = 0;
+let introWordIndex = 0;
+let introWordTimer = 0;
+let rocketPulse = 0;
 
 // Configuração responsiva do canvas
 function resizeCanvas() {
@@ -108,7 +308,7 @@ function getLevelConfig() {
       playerSpeed: 6,
       platformSpeed: 1.5,
       gravity: 0.33,
-      color: "#00ff00"
+      color: "#7CFC00" // Softer green
     },
     2: {
       name: bg.name,
@@ -119,7 +319,7 @@ function getLevelConfig() {
       playerSpeed: 6.2,
       platformSpeed: 1.6,
       gravity: 0.34,
-      color: "#33ff33"
+      color: "#90EE90" // Light green
     },
     3: {
       name: bg.name,
@@ -131,7 +331,7 @@ function getLevelConfig() {
       playerSpeed: 6.5,
       platformSpeed: 1.7,
       gravity: 0.35,
-      color: "#00ffff"
+      color: "#87CEEB" // Sky blue
     },
     4: {
       name: bg.name,
@@ -144,7 +344,7 @@ function getLevelConfig() {
       playerSpeed: 6.8,
       platformSpeed: 1.8,
       gravity: 0.36,
-      color: "#ffff00"
+      color: "#FFDAB9" // Peach puff
     },
     5: {
       name: bg.name,
@@ -158,7 +358,7 @@ function getLevelConfig() {
       playerSpeed: 7.1,
       platformSpeed: 1.9,
       gravity: 0.37,
-      color: "#ff9900"
+      color: "#FFA07A" // Light salmon
     },
     6: {
       name: bg.name,
@@ -173,7 +373,7 @@ function getLevelConfig() {
       playerSpeed: 7.5,
       platformSpeed: 2.0,
       gravity: 0.38,
-      color: "#ff00ff"
+      color: "#DDA0DD" // Plum
     },
     7: {
       name: bg.name,
@@ -189,7 +389,7 @@ function getLevelConfig() {
       playerSpeed: 7.8,
       platformSpeed: 2.1,
       gravity: 0.39,
-      color: "#ff6600"
+      color: "#F0E68C" // Khaki
     },
     8: {
       name: bg.name,
@@ -205,7 +405,7 @@ function getLevelConfig() {
       playerSpeed: 8.5,
       platformSpeed: 2.2,
       gravity: 0.45,
-      color: "#9933ff"
+      color: "#D8BFD8" // Thistle
     },
     9: {
       name: bg.name,
@@ -221,7 +421,7 @@ function getLevelConfig() {
       playerSpeed: 9.0,
       platformSpeed: 2.4,
       gravity: 0.54,
-      color: "#ff0099"
+      color: "#FFB6C1" // Light pink
     },
     10: {
       name: bg.name,
@@ -237,7 +437,7 @@ function getLevelConfig() {
       playerSpeed: 10.0,
       platformSpeed: 2.6,
       gravity: 0.55,
-      color: "#ff0000"
+      color: "#FF6B6B" // Soft red
     }
   };
   
@@ -256,6 +456,12 @@ function createInitialPlatforms() {
   player.score = 0;
   player.jetpack = false;
   player.level = 1;
+  
+  // Reseta animação da intro quando reinicia o jogo
+  introTextAlpha = 0;
+  introWordIndex = 0;
+  introWordTimer = 0;
+  rocketPulse = 0;
   
   // Cria estrelas para o nível inicial
   createStars();
@@ -561,31 +767,28 @@ function movePlayer() {
   // Game over
   if (player.y > canvas.height) {
     gameState = "gameover";
+    registrarPontuacaoGlobal();
   }
 }
 
 function drawStartScreen() {
-  ctx.fillStyle = "white";
-  ctx.font = "30px Arial";
-  ctx.textAlign = "center";
-  
-  if (!gameReady) {
-    // Tela de carregamento
-    ctx.fillText("⏳ Carregando...", canvas.width / 2, canvas.height / 2);
-    return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawStars();
+  drawIntroPlanets();
+  drawFloatingAstronaut();
+  drawAnimatedIntroText();
+
+  // Texto "clique para começar" - só aparece depois da animação completa
+  if (introWordIndex >= 10) {
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+
+    if (Date.now() % 1000 < 600) {
+      ctx.fillText("Toque para começar", canvas.width / 2, canvas.height / 2 + 180);
+    }
   }
-  
-  ctx.fillText("🚀 Astronauta Jump 🚀", canvas.width / 2, canvas.height / 2 - 40);
-  ctx.font = "20px Arial";
-  ctx.fillText("Clique ou toque para começar", canvas.width / 2, canvas.height / 2);
-  ctx.font = "16px Arial";
-  ctx.fillStyle = "#888";
-  ctx.fillText("10 níveis • Suba a cada 10.000 pontos!", canvas.width / 2, canvas.height / 2 + 40);
-  
-  // Dica de teste
-  ctx.font = "14px Arial";
-  ctx.fillStyle = "#666";
-  ctx.fillText("Pressione 1-9 para testar níveis | 0 = nível 10", canvas.width / 2, canvas.height / 2 + 70);
 }
 
 function drawGameOverScreen() {
@@ -635,19 +838,19 @@ const levelBackgrounds = {
     stars: { count: 120, brightness: 0.6 }
   },
   6: {
-    name: "Cinturão de Asteroides 🪨",
+    name: "Cinturão de Asteroides ☄️",
     colors: ["#2d2a32", "#1b1b1e"],
     stars: { count: 150, brightness: 0.9 }
   },
   7: {
-    name: "Júpiter 🌪️",
+    name: "Júpiter 🟠",
     colors: ["#ff8c42", "#d00000"],
     stars: { count: 100, brightness: 0.7 }
   },
   8: {
-    name: "Anéis de Saturno 💍",
-    colors: ["#ffd60a", "#faa307"],
-    stars: { count: 80, brightness: 0.6 }
+    name: "Anéis de Saturno 🪐",
+    colors: ["#efd672ff", "#f8dc6cff"], // Softer, muted yellow tones for a gentler appearance
+    stars: { count: 80, brightness: 0.8 }
   },
   9: {
     name: "Espaço Profundo 🌌",
@@ -743,6 +946,110 @@ function drawBlackHoleEffect() {
   ctx.restore();
 }
 
+function drawStars() {
+  for (let s of introStars) {
+    s.opacity += s.speed * (Math.random() > 0.5 ? 1 : -1);
+    s.opacity = Math.min(Math.max(s.opacity, 0.1), 1);
+
+    ctx.globalAlpha = s.opacity;
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawIntroPlanets() {
+  ctx.fillStyle = "#ffcc88"; 
+  introPlanets[0].x += introPlanets[0].speed;
+  ctx.beginPath();
+  ctx.arc(introPlanets[0].x, introPlanets[0].y, introPlanets[0].size, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#99ccff"; 
+  introPlanets[1].x += introPlanets[1].speed;
+  ctx.beginPath();
+  ctx.arc(introPlanets[1].x, introPlanets[1].y, introPlanets[1].size, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawFloatingAstronaut() {
+  introAstronautFloat += 0.4 * introAstronautDirection;
+  if (introAstronautFloat > 10 || introAstronautFloat < -10) {
+    introAstronautDirection *= -1;
+  }
+
+  ctx.drawImage(
+    astronautImg,
+    canvas.width / 2 - 50,
+    canvas.height / 2 - 180 + introAstronautFloat,
+    100,
+    100
+  );
+}
+
+function drawAnimatedIntroText() {
+  // Ajusta tamanho da fonte baseado na largura da tela
+  const fontSize = canvas.width < 400 ? 18 : (canvas.width < 500 ? 22 : 26);
+  ctx.font = `${fontSize}px Arial`;
+  ctx.textAlign = "center";
+  ctx.fillStyle = "white";
+
+  // Animação palavra por palavra
+  const words = [
+    "Você", "consegue", "ajudar", "o",
+    "astronauta", "Mateus", "a",
+    "desbravar", "o", "espaço?!"
+  ];
+  
+  // Incrementa contador de palavras
+  introWordTimer++;
+  if (introWordTimer > 15 && introWordIndex < words.length) {
+    introWordIndex++;
+    introWordTimer = 0;
+  }
+
+  // Fade in do texto
+  introTextAlpha = Math.min(introTextAlpha + 0.015, 1);
+  ctx.globalAlpha = introTextAlpha;
+
+  // Efeito de brilho no texto
+  ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+  ctx.shadowBlur = 10;
+
+  // Monta o texto até a palavra atual
+  const displayWords = words.slice(0, introWordIndex);
+  const line1Words = displayWords.slice(0, 4).join(" ");
+  const line2Words = displayWords.slice(4, 7).join(" ");
+  const line3Words = displayWords.slice(7, 10).join(" ");
+  
+  const centerX = canvas.width / 2;
+  const startY = canvas.height / 2 + 40;
+  const lineHeight = fontSize + 8;
+
+  if (line1Words) ctx.fillText(line1Words, centerX, startY);
+  if (line2Words) ctx.fillText(line2Words, centerX, startY + lineHeight);
+  if (line3Words) ctx.fillText(line3Words, centerX, startY + lineHeight * 2);
+
+  // Emoji 🚀 pulsando (centralizado abaixo do texto)
+  if (introWordIndex >= words.length) {
+    rocketPulse += 0.08;
+    const scale = 1 + Math.sin(rocketPulse) * 0.2;
+    
+    ctx.save();
+    ctx.translate(centerX, startY + lineHeight * 3 + 10);
+    ctx.scale(scale, scale);
+    ctx.font = `${fontSize * 1.5}px Arial`;
+    ctx.fillText("🚀", 0, 0);
+    ctx.restore();
+  }
+
+  // Reseta sombra
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+}
+
 function drawGame() {
   // Aplicar screen shake
   if (screenShake > 0) {
@@ -795,27 +1102,91 @@ function drawGame() {
     ctx.fillRect(player.x + 28, player.y + player.height, 12, 10);
   }
 
-  // Plataformas
+  // Plataformas com aparência profissional
   for (let plat of platforms) {
     // Plataforma fantasma pisca
     if (plat.type === "ghost" && !plat.ghostVisible) {
       ctx.globalAlpha = 0.3;
     }
 
-    if (plat.type === "fragile") ctx.fillStyle = "red";
-    else if (plat.type === "moving") ctx.fillStyle = "orange";
-    else if (plat.type === "boost") ctx.fillStyle = "cyan";
-    else if (plat.type === "cracked") ctx.fillStyle = "#A0522D";
-    else if (plat.type === "spring_side") {
-      ctx.fillStyle = "#FF1493"; // Pink
+    // Criar gradiente para profundidade
+    let gradient = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.height);
+    let baseColor, accentColor;
+
+    if (plat.type === "fragile") {
+      baseColor = "#FF6B6B"; // Soft red
+      accentColor = "#CC5555";
+    } else if (plat.type === "moving") {
+      baseColor = "#FFDAB9"; // Peach puff
+      accentColor = "#E6C3A3";
+    } else if (plat.type === "boost") {
+      baseColor = "#87CEEB"; // Sky blue
+      accentColor = "#6BB6D6";
+    } else if (plat.type === "cracked") {
+      baseColor = "#D2B48C"; // Tan
+      accentColor = "#B8A076";
+    } else if (plat.type === "spring_side") {
+      baseColor = "#FFB6C1"; // Light pink
+      accentColor = "#E69FB0";
+    } else if (plat.type === "ghost") {
+      baseColor = "#DDA0DD"; // Plum
+      accentColor = "#C78BC7";
+    } else if (plat.type === "cloud") {
+      baseColor = "#E6E6FA"; // Lavender
+      accentColor = "#D1D1E0";
+    } else {
+      baseColor = "#90EE90"; // Light green
+      accentColor = "#7BCF7B";
     }
-    else if (plat.type === "ghost") ctx.fillStyle = "#9370DB"; // Roxo
-    else if (plat.type === "cloud") ctx.fillStyle = "#F0F8FF"; // Nuvem branca
-    else ctx.fillStyle = "lime";
 
-    ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    gradient.addColorStop(0, baseColor);
+    gradient.addColorStop(1, accentColor);
 
-    // Indicador de direção para mola lateral
+    // Desenhar plataforma com gradiente e bordas arredondadas
+    ctx.save();
+    ctx.fillStyle = gradient;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    ctx.beginPath();
+    const radius = 5; // Bordas arredondadas
+    ctx.roundRect(plat.x, plat.y, plat.width, plat.height, radius);
+    ctx.fill();
+
+    // Contorno sutil
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+
+    // Ícones ou efeitos especiais para diferenciação
+    if (plat.type === "boost") {
+      ctx.fillStyle = "white";
+      ctx.font = "16px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("↑", plat.x + plat.width / 2, plat.y + plat.height / 2 + 5);
+    } else if (plat.type === "fragile") {
+      ctx.fillStyle = "white";
+      ctx.font = "12px Arial";
+      ctx.fillText("!", plat.x + plat.width / 2, plat.y + plat.height / 2 + 4);
+    } else if (plat.type === "cracked") {
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(plat.x + 5, plat.y + 5);
+      ctx.lineTo(plat.x + plat.width - 5, plat.y + plat.height - 5);
+      ctx.stroke();
+    } else if (plat.type === "cloud") {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.beginPath();
+      ctx.arc(plat.x + 20, plat.y + 8, 8, 0, Math.PI * 2);
+      ctx.arc(plat.x + 35, plat.y + 8, 10, 0, Math.PI * 2);
+      ctx.arc(plat.x + 50, plat.y + 8, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Indicador de direção para mola lateral (mantido)
     if (plat.type === "spring_side") {
       ctx.fillStyle = "white";
       ctx.font = "20px Arial";
@@ -887,10 +1258,27 @@ let keys = {};
 
 window.addEventListener("keydown", e => {
   keys[e.key] = true;
+  
+  // Enter no modal de nome
+  if (e.key === "Enter" && document.getElementById("modalNome").style.display === "flex") {
+    confirmarNome();
+    return;
+  }
+  
+  // Enter no modal de PIX
+  if (e.key === "Enter" && document.getElementById("modalPix").style.display === "flex") {
+    confirmarPix();
+    return;
+  }
+  
   if ((gameState === "start" || gameState === "gameover") && (e.key === "Enter" || e.key === " ")) {
     if (gameReady) {
-      createInitialPlatforms();
-      gameState = "playing";
+      if (!playerName) {
+        mostrarModalNome();
+      } else {
+        createInitialPlatforms();
+        gameState = "playing";
+      }
     }
   }
   
@@ -900,6 +1288,10 @@ window.addEventListener("keydown", e => {
     const keyIndex = levelKeys.indexOf(e.key);
     
     if (keyIndex >= 0) {
+      if (!playerName) {
+        mostrarModalNome();
+        return;
+      }
       const targetLevel = keyIndex === 0 ? 10 : keyIndex;
       createInitialPlatforms();
       player.score = (targetLevel - 1) * 10000;
@@ -912,12 +1304,16 @@ window.addEventListener("keyup", e => keys[e.key] = false);
 
 // Touch no canvas (iniciar jogo)
 canvas.addEventListener("touchstart", function(e) {
-  e.preventDefault(); // Previne scroll
+  e.preventDefault();
   
   if (gameState === "start" || gameState === "gameover") {
     if (gameReady) {
-      createInitialPlatforms();
-      gameState = "playing";
+      if (!playerName) {
+        mostrarModalNome();
+      } else {
+        createInitialPlatforms();
+        gameState = "playing";
+      }
     }
     return;
   }
@@ -926,8 +1322,12 @@ canvas.addEventListener("touchstart", function(e) {
 // Click no canvas (desktop)
 canvas.addEventListener("click", function() {
   if ((gameState === "start" || gameState === "gameover") && gameReady) {
-    createInitialPlatforms();
-    gameState = "playing";
+    if (!playerName) {
+      mostrarModalNome();
+    } else {
+      createInitialPlatforms();
+      gameState = "playing";
+    }
   }
 });
 
