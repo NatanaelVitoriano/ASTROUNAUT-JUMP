@@ -783,9 +783,11 @@ function movePlayer() {
   }
 
   // Scroll da câmera
-  if (player.y < canvas.height / 2) {
-    let offset = (canvas.height / 2 - player.y);
-    player.y = canvas.height / 2;
+  const scrollThreshold = Math.max(canvas.height / 3, 250);
+  
+  if (player.y < scrollThreshold) {
+    let offset = (scrollThreshold - player.y);
+    player.y = scrollThreshold;
     for (let plat of platforms) {
       plat.y += offset;
     }
